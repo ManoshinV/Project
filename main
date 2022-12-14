@@ -1,0 +1,401 @@
+// вывод данных осуществяется в файл, положение описано в 18 строке
+// на консоль идут данные о смене объекта, вокруг которого вращается корабль
+// интервал времени вывода данных в файл описан в const TIME (11 строка), время в секундах,
+// при значении меньшем 100 программа может замедлиться из-за увеличения времени, необходимого
+// на вывод данных
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+const long long TIME = 100;
+
+const long double G = 6.6740831 * pow(10, -11);
+const long double M_Star = 1.7565459 * pow(10, 28);
+const long double PI = acos(-1);
+long long t = 0;
+
+ofstream f("C:\\it3\\rkt.txt");
+
+struct Planet {
+	long double abs_v{}; //модуль скорости
+	long double v_Corner{}; //направление скорости
+	long double corner{}; //полярный угол между объуктом и солнцем
+	long double R; //расстояние до солнца
+
+	long double	Eq_radius{}; //экв радиус
+	long double Weight{}; //масса
+	long double The_period_of_rotation{}; //период обращения
+	long double The_sphere_of_gravity{}; //сфера тяготения
+};
+
+struct Ship {
+	long double m_k1{};
+	long double m_t1{};
+	long double F1{};
+	long double ras_t1{};
+
+	long double m_k2{};
+	long double m_t2{};
+	long double F2{};
+	long double ras_t2{};
+
+	long double m_k3{};
+	long double m_t3{};
+	long double F3{};
+	long double ras_t3{};
+
+	long double R{};
+	long double abs_v{};
+	long double v_Corner{};
+	long double Corner_o{};
+	string Celestial_object = "Kerbin";
+};
+
+Planet Duna{ 7146, PI / 2, 0, 21783189163 , 320000, 4.5154812 * pow(10, 21), 17315400, 47921949 };
+Planet Kerbin{ 9285,-0.37 * 2 * PI + PI / 2 + 2 * PI ,-0.37 * 2 * PI + 2 * PI,13599840256 ,  600000,5.2915793 * pow(10, 22), 9203545 ,84159286 };
+Planet Kerbol;
+Ship VH_22{ 163.6, 287, 15600000, 5.16187, 33.6, 32, 2000000, 0.68085 ,17.6 ,16, 650000,0.2078, 600000, 0, 0, 0,"Kerbin" };
+
+void Mv(Planet P) {
+	long double _t = 1;
+	long double vx = VH_22.abs_v * cos(VH_22.v_Corner - VH_22.Corner_o);
+	long double vy = VH_22.abs_v * sin(VH_22.v_Corner - VH_22.Corner_o);
+	long double a = (G * P.Weight) / (VH_22.R * VH_22.R);
+	long double sx = vx * _t - (a * _t * _t) / 2;
+	long double sy = vy * _t;
+	long double fi = atan2(sy, sx);
+	bool f1;
+	if (fi <= PI && fi >= 0) {
+		f1 = true;
+		fi = PI - fi;
+	}
+	else {
+		f1 = false;
+		fi = abs(fi);
+		fi = PI - fi;
+	}
+	long double s = sqrt(sx * sx + sy * sy);
+	long double rn = sqrt(VH_22.R * VH_22.R + s * s - 2 * VH_22.R * s * cos(fi));
+	long double fi2 = asin((sin(fi) * s) / rn);
+	vx = vx - a * _t;
+	long double new_corner = atan2(vy, vx);
+	long double new_abs_v = sqrt(vx * vx + vy * vy);
+	VH_22.abs_v = new_abs_v;
+	VH_22.v_Corner = new_corner + VH_22.Corner_o;
+	VH_22.R = rn;
+	if (f1) {
+		VH_22.Corner_o += fi2;
+	}
+	else {
+		VH_22.Corner_o -= fi2;
+	}
+	if (VH_22.Corner_o > 2 * PI) {
+		VH_22.Corner_o -= 2 * PI;
+	}
+	if (VH_22.v_Corner > 2 * PI) {
+		VH_22.v_Corner -= 2 * PI;
+	}
+}
+
+void Mv_a(long double an, long double l_Corner, Planet P) {
+	f << "Время = " << t << " ускорение = " << an << " полярный угол ускорения " << l_Corner << '\n';
+	long double _t = 1;
+	long double vx = VH_22.abs_v * cos(VH_22.v_Corner - VH_22.Corner_o);
+	long double vy = VH_22.abs_v * sin(VH_22.v_Corner - VH_22.Corner_o);
+	long double ax = an * cos(l_Corner - VH_22.Corner_o);
+	long double ay = an * sin(l_Corner - VH_22.Corner_o);
+	long double a = (G * P.Weight) / (VH_22.R * VH_22.R);
+	long double sx = vx * _t - (a * _t * _t) / 2 + (ax * _t * _t) / 2;
+	long double sy = vy * _t + (ay * _t * _t) / 2;
+	long double fi = atan2(sy, sx);
+	bool f1;
+	if (fi <= PI && fi >= 0) {
+		f1 = true;
+		fi = PI - fi;
+	}
+	else {
+		f1 = false;
+		fi = abs(fi);
+		fi = PI - fi;
+	}
+	long double s = sqrt(sx * sx + sy * sy);
+	long double rn = sqrt(VH_22.R * VH_22.R + s * s - 2 * VH_22.R * s * cos(fi));
+	long double fi2 = asin((sin(fi) * s) / rn);
+	vx = vx - a * _t + ax * _t;
+	vy = vy + ay * _t;
+	long double new_corner = atan2(vy, vx);
+	long double new_abs_v = sqrt(vx * vx + vy * vy);
+	VH_22.abs_v = new_abs_v;
+	VH_22.v_Corner = new_corner + VH_22.Corner_o;
+	VH_22.R = rn;
+	if (f1) {
+		VH_22.Corner_o += fi2;
+	}
+	else {
+		VH_22.Corner_o -= fi2;
+	}
+	if (VH_22.Corner_o > 2 * PI) {
+		VH_22.Corner_o -= 2 * PI;
+	}
+	if (VH_22.v_Corner > 2 * PI) {
+		VH_22.v_Corner -= 2 * PI;
+	}
+}
+
+void Mv_Planet(Planet P) {
+	long double _t = 1;
+	long double vx = P.abs_v * cos(P.v_Corner - P.corner);
+	long double vy = P.abs_v * sin(P.v_Corner - P.corner);
+	long double a = (G * M_Star) / (P.R * P.R);
+	long double sx = vx * _t - (a * _t * _t) / 2;
+	long double sy = vy * _t;
+	long double fi = atan2(sy, sx);
+	bool f1;
+	if (fi <= PI && fi >= 0) {
+		f1 = true;
+		fi = PI - fi;
+	}
+	else {
+		f1 = false;
+		fi = abs(fi);
+		fi = PI - fi;
+	}
+	long double s = sqrt(sx * sx + sy * sy);
+	long double rn = sqrt(P.R * P.R + s * s - 2 * P.R * s * cos(fi));
+	long double fi2 = asin((sin(fi) * s) / rn);
+	vx = vx - a * _t;
+	long double new_corner = atan2(vy, vx);
+	long double new_abs_v = sqrt(vx * vx + vy * vy);
+	P.abs_v = new_abs_v;
+	P.v_Corner = new_corner + P.corner;
+	P.R = rn;
+  
+	if (f1) {
+		P.corner += fi2;
+	}
+	else {
+		P.corner -= fi2;
+	}
+  
+	if (P.corner > 2 * PI) {
+		P.corner -= 2 * PI;
+	}
+
+	if (P.v_Corner > 2 * PI) {
+		P.v_Corner -= 2 * PI;
+	}
+
+	if (P.Weight == Duna.Weight) {
+		Duna.abs_v = P.abs_v;
+		Duna.corner = P.corner;
+		Duna.v_Corner = P.v_Corner;
+		Duna.R = P.R;
+	}
+	else {
+		Kerbin.abs_v = P.abs_v;
+		Kerbin.corner = P.corner;
+		Kerbin.v_Corner = P.v_Corner;
+		Kerbin.R = P.R;
+	}
+}
+
+void Dn_sphere() {
+	long double R = sqrt(Duna.R * Duna.R + VH_22.R * VH_22.R - 2 * Duna.R * VH_22.R * cos(abs(Duna.corner - VH_22.Corner_o)));
+	long double alf = asin((Kerbin.R / R) * sin(Duna.corner - VH_22.Corner_o));
+	long double vx = VH_22.abs_v * cos(VH_22.v_Corner);
+	long double vy = VH_22.abs_v * sin(VH_22.v_Corner);
+	long double vx2 = Duna.abs_v * cos(Duna.v_Corner);
+	long double vy2 = Duna.abs_v * sin(Duna.v_Corner);
+	vx -= vx2;
+	vy -= vy2;
+	long double new_corner = atan2(vy, vx);
+	long double new_abs_v = sqrt(vx * vx + vy * vy);
+	VH_22.v_Corner = new_corner;
+	VH_22.abs_v = new_abs_v;
+	VH_22.R = R;
+	VH_22.Corner_o = -(PI - Duna.corner - alf);
+}
+
+void P() {
+	if (t % TIME == 0) {
+		f << "Время = " << t << " Объект: " << VH_22.Celestial_object << " расстояние и полярный угол в радианах = " << VH_22.R << ' ' << VH_22.Corner_o << " мдуль скорости в м/с и её полярный угол в радианах = " << VH_22.abs_v << ' ' << VH_22.v_Corner << '\n';
+	}
+}
+
+int main() {
+	Kerbol.Weight = M_Star;
+	long double a_p;
+	long double _t;
+	int i;
+	long double a;
+
+	while (VH_22.m_t1 > 0) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F1 / (VH_22.m_k1 + VH_22.m_t1) / 1000;
+		Mv_a(a, 0, Kerbin);
+		VH_22.m_t1 -= VH_22.ras_t1;
+	}
+
+	while (VH_22.R < 1650000) {
+		P();
+		++t;
+		Mv(Kerbin);
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+	}
+
+	while (VH_22.m_t2 > 6) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F2 / (VH_22.m_k2 + VH_22.m_t2) / 1000;
+		Mv_a(a, PI / 2 + VH_22.Corner_o, Kerbin);
+		VH_22.m_t2 -= VH_22.ras_t2;
+	}
+
+	while (1) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		Mv(Kerbin);
+		if (VH_22.R > 25000000) {
+			break;
+		}
+		if (VH_22.Corner_o > PI * 3 / 2 - 0.1 * PI) {
+			break;
+		}
+	}
+
+	while (VH_22.m_t2 > 0) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F2 / (VH_22.m_k2 + VH_22.m_t2) / 1000;
+		Mv_a(a, VH_22.v_Corner, Kerbin);
+		VH_22.m_t2 -= VH_22.ras_t2;
+	}
+
+	while (1) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		Mv(Kerbin);
+		if (VH_22.R > 14500000) {
+			break;
+		}
+	}
+
+	while (VH_22.m_t3 > 13.3) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F3 / (VH_22.m_k3 + VH_22.m_t3) / 1000;
+		Mv_a(a, VH_22.v_Corner, Kerbin);
+		VH_22.m_t3 -= VH_22.ras_t3;
+	}
+
+	while (VH_22.R < Kerbin.The_sphere_of_gravity) {
+		P();
+		++t;
+		Mv(Kerbin);
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+	}
+
+	cout << "Change of coordinates from Kerbin to the Sun" << '\n';
+
+	long double A;
+	A = -PI + Kerbin.corner + VH_22.Corner_o;
+	if (A < 0) {
+		A += 2 * PI;
+	}
+	long double R_New = sqrt(Kerbin.R * Kerbin.R + VH_22.R * VH_22.R - 2 * VH_22.R * Kerbin.R * cos(A));
+	long double Fi_New = Kerbin.corner + asin((VH_22.R / R_New) * sin(A));
+	VH_22.Corner_o = Fi_New;
+	VH_22.R = R_New;
+	VH_22.v_Corner = Kerbin.v_Corner;
+	VH_22.abs_v = Kerbin.abs_v;
+	VH_22.Celestial_object = "Kerbol";
+
+	while (1) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		Mv(Kerbol);
+		if (t > 314234 + 4770000) {
+			break;
+		}
+	}
+
+	while (VH_22.m_t3 > 6) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F3 / (VH_22.m_k3 + VH_22.m_t3) / 1000;
+		Mv_a(a, VH_22.v_Corner, Kerbol);
+		VH_22.m_t3 -= VH_22.ras_t3;
+	}
+	cout << "maneuver towards Dune" << '\n';
+	long double R;
+	R = sqrt(Duna.R * Duna.R + VH_22.R * VH_22.R - 2 * Duna.R * VH_22.R * cos(abs(Duna.corner - VH_22.Corner_o)));
+  
+	while (1) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		Mv(Kerbol);
+		R = sqrt(Duna.R * Duna.R + VH_22.R * VH_22.R - 2 * Duna.R * VH_22.R * cos(abs(Duna.corner - VH_22.Corner_o)));
+		if (R < Duna.The_sphere_of_gravity / 10) {
+			break;
+		}
+	}
+	cout << "change of coordinates from Sun to Dune" << '\n';
+	Dn_sphere();
+	VH_22.Celestial_object = "Duna";
+
+	while (VH_22.m_t3 > 4) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		a = VH_22.F3 / (VH_22.m_k3 + VH_22.m_t3) / 1000;
+		Mv_a(a, -PI / 2, Duna);
+		VH_22.m_t3 -= VH_22.ras_t3;
+	}
+
+	while (1) {
+		P();
+		++t;
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		Mv(Duna);
+		if (VH_22.R < Duna.Eq_radius + 150000) {
+			break;
+		}
+	}
+
+	while (VH_22.R > Duna.Eq_radius) {
+		P();
+		++t;
+		_t = 1;
+		a_p = VH_22.abs_v * VH_22.abs_v / 35000;
+		a = (G * Duna.Weight) / (Duna.R * Duna.R);
+		Mv_Planet(Duna);
+		Mv_Planet(Kerbin);
+		VH_22.R -= VH_22.abs_v * _t - (a_p - a) * _t * _t / 2;
+		VH_22.abs_v -= (a_p - a) * _t;
+	}
+	return 0;
+}
