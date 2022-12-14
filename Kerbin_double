@@ -100,7 +100,7 @@ int main() {
 			max = Kerbin.R;
 		}
 		if (t % 10000 == 0)
-			printf("fi = %0.9Lf , R = %0.9Lf \n", Kerbin.corner * 180 / PI, Kerbin.R;
+			printf("fi = %0.9Lf , R = %0.9Lf \n", Kerbin.corner * 180 / PI, Kerbin.R);
 	}
 	printf("min = %Lf * 10^%d, max = %Lf * 10^%d, del = %Lf * 10^%d \n", Pow2(min), Pow(min), Pow2(max), Pow(max), Pow2(max - min), Pow(max - min));
 
